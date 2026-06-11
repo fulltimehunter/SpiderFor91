@@ -6,8 +6,8 @@ If you want to write a crawler script that can run smoothly in Project 91, you c
 
 First
 ```
-Help me obtain the video link, video name, video cover image link, and unique identifier for each video on xx website
-You need to ensure that the corresponding video and cover image can be downloaded directly through the direct link, and the script should not use browser automation tools such as Selenium or Playwright, as this will make the script heavy.
+Help me retrieve, for each video on the xx website, the direct video URL, video name, direct cover image URL, and a unique identifier.
+Ensure that the corresponding video and cover image can be downloaded directly via these URLs. The script must not rely on browser automation tools such as Selenium or Playwright, as they would make the script too heavy.
 ```
 
 Second
