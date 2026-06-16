@@ -383,7 +383,7 @@ class Porn91Spider:
                 self.log(f"  解码 strencode2 失败: {e}")
 
         mp4_match = re.search(
-            r'https?://[^\s"'""<>]+\.mp4[^\s"'""<>]*',
+            r'https?://[^\s"\'"<>]+\.mp4[^\s"\'"<>]*',
             html
         )
         if mp4_match:
@@ -763,7 +763,7 @@ def main():
     parser.add_argument("--quiet", action="store_true",
                         help="压缩日志，每条视频只输出关键事件")
     parser.add_argument("--target-new", type=int, default=None,
-                        help="目标新增模式：从 page 1 起翻页直到累计处理这么多新源视频后停止（backend 凌晨任务用）")
+                        help="目��新增模式：从 page 1 起翻页直到累计处理这么多新源视频后停止（backend 凌晨任务用）")
     parser.add_argument("--seen-viewkeys-file", type=str, default=None,
                         help="文件路径，每行一个已处理过的 viewkey 或 mp4 源 ID；脚本会跳过这些视频")
     parser.add_argument("--stream-output", action="store_true",
