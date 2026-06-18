@@ -4,8 +4,8 @@
 用途: 爬取 91Porn 列表中的视频标题、视频下载直链、封面图直链和唯一标识，
 并按 crawler.v1 协议输出给 video-site-91 后端入库。
 
-已修改: 默认不再固定为热门(category=top)，默认不带 category 查询参数以抓取全部视频。
-新增: CLI 参数 --category 可用于指定单个分类（例如 "top"、"new" 等）。
+默认抓取热门分类(category=top)。
+CLI 参数 --category 可用于指定单个分类（例如 "top"、"new" 等）。
 """
 
 import argparse
@@ -50,11 +50,11 @@ def prefer_ipv4_for_plain_socks5_proxy():
     socket._spider91_ipv4_first = True
 
 BASE_URL = "https://www.91porn.com/v.php"
-# LIST_PARAMS 不再固定为热门，保留配置位置以供扩展
 LIST_PARAMS = {
-    # "category": "top",
+    "category": "top",
     "viewtype": "basic"
 }
+DEFAULT_CATEGORY = "top"
 
 HEADERS = {
     "User-Agent": (
@@ -128,7 +128,7 @@ class Porn91Spider:
         seen_viewkeys: list = None,
         stream_output: bool = False,
         stream_protocol: str = "legacy",
-        category: str = None,
+        category: str = DEFAULT_CATEGORY,
     ):
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
@@ -145,8 +145,11 @@ class Porn91Spider:
         self.quiet = bool(quiet)
         self.stream_output = bool(stream_output)
         self.stream_protocol = stream_protocol or "legacy"
-        # 新增: 支持按分类抓取，None 或空字符串表示不带 category（抓取全部）
-        self.category = category.strip() if isinstance(category, str) and category.strip() else None
+        self.category = (
+            category.strip()
+            if isinstance(category, str) and category.strip()
+            else DEFAULT_CATEGORY
+        )
 
         try:
             from requests.adapters import HTTPAdapter
@@ -449,10 +452,7 @@ class Porn91Spider:
         self.log(f"配置: 输出文件 {os.path.abspath(self.output_file)}")
         if self.skip_viewkeys:
             self.log(f"配置: 已跳过 {len(self.skip_viewkeys)} 个已知 viewkey")
-        if self.category:
-            self.log(f"配置: 指定分类 category={self.category}")
-        else:
-            self.log("配置: 未指定 category，默认抓取全部视频")
+        self.log(f"配置: 分类 category={self.category}")
         self.log("")
 
         page_num = self.start_page
@@ -470,11 +470,7 @@ class Porn91Spider:
                 self.log(f"已累计 {self.processed_videos} 个新视频，达到目标 {self.target_new}，停止")
                 break
 
-            # 构建基础列表页 URL：如果指定了 category 则带上，否则只使用 viewtype=basic（可返回全部）
-            if self.category:
-                base_url = f"{BASE_URL}?category={self.category}&viewtype=basic"
-            else:
-                base_url = f"{BASE_URL}?viewtype=basic"
+            base_url = f"{BASE_URL}?category={self.category}&viewtype=basic"
 
             if page_num == 1:
                 page_url = base_url
@@ -687,7 +683,7 @@ def run_job(job_path: str):
     )
     seen_file = job.get("seen_source_ids_file") or ""
     config = job.get("config") if isinstance(job.get("config"), dict) else {}
-    category = str(config.get("category") or "").strip() or None
+    category = str(config.get("category") or DEFAULT_CATEGORY).strip() or DEFAULT_CATEGORY
     output_dir = job.get("output_dir") or os.getcwd()
     run_id = job.get("run_id") or datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
     os.makedirs(output_dir, exist_ok=True)
@@ -775,9 +771,8 @@ def main():
                              "日志改走 stderr。配合 backend 边读边下载使用。")
     parser.add_argument("--job", type=str, default=None,
                         help="crawler.v1 job JSON 路径；作为通用脚本爬虫运行。")
-    # 新增: 支持指定 category（默认为 None，表示不带 category，抓取全部）
-    parser.add_argument("--category", type=str, default=None,
-                        help="分类，默认空表示抓取全部视频；例如 --category top")
+    parser.add_argument("--category", type=str, default=DEFAULT_CATEGORY,
+                        help="分类，默认 top；例如 --category top")
 
     args, _ = parser.parse_known_args()
     if args.job:
